@@ -45,6 +45,9 @@ app.*.map.json
 /android/app/release
 
 # Python / Backend related
+ven/
+venv/
+.venv/
 backend/ven/
 backend/venv/
 backend/.venv/
