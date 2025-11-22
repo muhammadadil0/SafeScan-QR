@@ -1,0 +1,35 @@
+name: safe_scan_qr
+description: A new Flutter project for SafeScan QR.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  mobile_scanner: ^5.0.0
+  image_picker: ^1.0.4
+  url_launcher: ^6.1.14
+  http: ^1.1.0
+  google_fonts: ^6.1.0
+  cupertino_icons: ^1.0.2
+  webview_flutter: ^4.13.0
+  shared_preferences: ^2.5.3
+  provider: ^6.1.1
+  # tflite_flutter: ^0.10.4  # Temporarily disabled - compatibility issue with Flutter SDK
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  
+  # Add ML model assets
+  assets:
+    - assets/models/url_classifier.tflite
