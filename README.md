@@ -300,7 +300,7 @@ flutter run
 
 ## 👨‍💻 Developer
 
-**Your Name**
+**Muhammad Adil | Muhammad Kaif**
 - Portfolio: [yourwebsite.com](https://yourwebsite.com)
 - LinkedIn: [linkedin.com/in/yourprofile](https://linkedin.com/in/yourprofile)
 - GitHub: [@yourusername](https://github.com/yourusername)
@@ -324,7 +324,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-- **Email:** support@safescanqr.com
+- **Email:** adilraxiq64@gmail.com | muhammadkaifnu@gmail.com
 - **Issues:** [GitHub Issues](https://github.com/yourusername/safescan-qr/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/yourusername/safescan-qr/discussions)
 
