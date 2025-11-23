@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="safe_scan_qr"
+        android:label="SafeScan QR"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

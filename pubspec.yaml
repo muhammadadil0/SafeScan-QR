@@ -33,3 +33,4 @@ flutter:
   # Add ML model assets
   assets:
     - assets/models/url_classifier.tflite
+    - assets/logo.png
