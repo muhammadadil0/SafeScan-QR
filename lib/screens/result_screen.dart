@@ -100,18 +100,21 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              _getRiskColor().withOpacity(0.1),
-              Colors.white,
-            ],
+    return Theme(
+      data: ThemeData.light(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                _getRiskColor().withOpacity(0.1),
+                Colors.white,
+              ],
+            ),
           ),
-        ),
         child: SafeArea(
           child: Column(
             children: [
@@ -132,7 +135,7 @@ class ResultScreen extends StatelessWidget {
                         ],
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
@@ -142,6 +145,7 @@ class ResultScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                   ],
@@ -173,13 +177,14 @@ class ResultScreen extends StatelessWidget {
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(_getContentIcon(), size: 16),
+                              Icon(_getContentIcon(), size: 16, color: Colors.black87),
                               const SizedBox(width: 8),
                               Text(
                                 result.contentType.toUpperCase(),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
+                                  color: Colors.black87,
                                 ),
                               ),
                             ],
@@ -218,6 +223,7 @@ class ResultScreen extends StatelessWidget {
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
+                                    color: Colors.black87,
                                   ),
                                 ),
                               ],
@@ -234,6 +240,7 @@ class ResultScreen extends StatelessWidget {
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontFamily: 'monospace',
+                                  color: Colors.black87,
                                 ),
                               ),
                             ),
@@ -273,6 +280,7 @@ class ResultScreen extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
                                     ),
                                   ),
                                 ],
@@ -296,7 +304,10 @@ class ResultScreen extends StatelessWidget {
                                         Expanded(
                                           child: Text(
                                             risk,
-                                            style: const TextStyle(fontSize: 14),
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.black87,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -433,6 +444,7 @@ class ResultScreen extends StatelessWidget {
           ),
         ),
       ),
+      ),
     );
   }
 }
@@ -491,11 +503,11 @@ class _RiskScoreCircle extends StatelessWidget {
                     color: color,
                   ),
                 ),
-                const Text(
+                Text(
                   'Risk Score',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey,
+                    color: Colors.grey[700],
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -549,13 +561,17 @@ class _InfoRow extends StatelessWidget {
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
+                color: Colors.black87,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(fontSize: 13),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
             ),
           ),
         ],
