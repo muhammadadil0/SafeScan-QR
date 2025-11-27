@@ -75,7 +75,7 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
           // Dark Overlay with Cutout
           CustomPaint(
             painter: ScannerOverlayPainter(
-              borderColor: Colors.blueAccent,
+              borderColor: Theme.of(context).primaryColor,
               borderRadius: 20,
               borderLength: 40,
               borderWidth: 8,
@@ -100,10 +100,10 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
                         child: Container(
                           height: 2,
                           decoration: BoxDecoration(
-                            color: Colors.blueAccent,
+                            color: Theme.of(context).primaryColor,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.blueAccent.withOpacity(0.5),
+                                color: Theme.of(context).primaryColor.withOpacity(0.5),
                                 blurRadius: 10,
                                 spreadRadius: 2,
                               ),

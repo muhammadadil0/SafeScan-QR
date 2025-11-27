@@ -1,6 +1,14 @@
 # SafeScan QR - ML Backend Requirements
 # Updated for Python 3.12 compatibility
 
+# Flask API Server
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# AI Model (Hugging Face Transformers)
+transformers>=4.35.0
+torch>=2.1.0
+
 # Core ML Libraries
 tensorflow>=2.16.0
 numpy>=1.24.0

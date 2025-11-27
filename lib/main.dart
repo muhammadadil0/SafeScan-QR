@@ -40,13 +40,9 @@ class SafeScanApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           
           // Theme
-          theme: AppTheme.lightTheme.copyWith(
-            textTheme: GoogleFonts.outfitTextTheme(AppTheme.lightTheme.textTheme),
-          ),
-          darkTheme: AppTheme.darkTheme.copyWith(
-            textTheme: GoogleFonts.outfitTextTheme(AppTheme.darkTheme.textTheme),
-          ),
-          themeMode: themeProvider.themeMode,
+          theme: themeProvider.lightTheme,
+          darkTheme: themeProvider.darkTheme,
+          themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
           
           // Localization
           locale: languageProvider.locale,

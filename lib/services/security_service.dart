@@ -5,6 +5,13 @@ import '../models/scan_result.dart';
 // import 'ml_service.dart'; // Temporarily disabled - TFLite compatibility issue
 
 class SecurityService {
+  // AI Model API Configuration
+  // IMPORTANT: Replace with your actual IP address
+  // - For Android Emulator: use '10.0.2.2'
+  // - For Real Phone: use your PC's IP (e.g., '192.168.1.5')
+  // - For iOS Simulator: use 'localhost' or '127.0.0.1'
+  static const String AI_API_URL = "http://10.0.2.2:5001/scan";
+  
   // URL Shortener domains
   static const List<String> urlShorteners = [
     'tinyurl.com', 'bit.ly', 'cut.ly', 't.co', 'goo.gl', 'ow.ly',
@@ -199,37 +206,43 @@ class SecurityService {
     }
 
 
-    // 17. ML Prediction (Optional - if model is loaded)
-    // Temporarily disabled due to TFLite package compatibility issues
-    /*
+    // 17. AI Model Prediction (Hugging Face Transformers)
     try {
-      final mlService = MLService();
-      if (mlService.isModelLoaded) {
-        final mlPrediction = await mlService.predictURL(url);
-        if (mlPrediction != null) {
-          metadata['mlPrediction'] = mlPrediction.className;
-          metadata['mlConfidence'] = (mlPrediction.confidence * 100).toStringAsFixed(2);
-          
-          // Add ML insights to risks
-          if (mlPrediction.isPhishing && mlPrediction.confidence > 0.7) {
-            risks.add('🤖 AI detected: Potential phishing (${(mlPrediction.confidence * 100).toStringAsFixed(0)}% confidence)');
-            riskScore += 30;
-          } else if (mlPrediction.isMalware && mlPrediction.confidence > 0.7) {
-            risks.add('🤖 AI detected: Potential malware (${(mlPrediction.confidence * 100).toStringAsFixed(0)}% confidence)');
-            riskScore += 35;
-          } else if (mlPrediction.isSpam && mlPrediction.confidence > 0.7) {
-            risks.add('🤖 AI detected: Likely spam (${(mlPrediction.confidence * 100).toStringAsFixed(0)}% confidence)');
-            riskScore += 15;
-          } else if (mlPrediction.isSafe && mlPrediction.confidence > 0.8) {
-            risks.add('🤖 AI verified: Appears safe (${(mlPrediction.confidence * 100).toStringAsFixed(0)}% confidence)');
+      final aiPrediction = await _callAIModel(url);
+      if (aiPrediction != null) {
+        metadata['aiPrediction'] = aiPrediction['label'];
+        metadata['aiConfidence'] = aiPrediction['confidence'];
+        metadata['aiScanTime'] = aiPrediction['scan_time_ms'];
+        
+        // Add AI insights to risks
+        bool isSafe = aiPrediction['is_safe'] ?? false;
+        double confidence = aiPrediction['confidence'] ?? 0.0;
+        
+        if (!isSafe) {
+          // AI detected malicious
+          // Set risk score based on AI confidence (if higher than current rule-based score)
+          int aiRiskScore = confidence.toInt();
+          if (aiRiskScore > riskScore) {
+            riskScore = aiRiskScore;
           }
+          
+          // Force dangerous status if confidence is high
+          if (confidence >= 70.0) {
+            status = SecurityStatus.dangerous;
+            risks.add('🤖 AI detected: Malicious URL (${confidence.toStringAsFixed(1)}% confidence)');
+          } else {
+            status = _escalateStatus(status, SecurityStatus.suspicious);
+            risks.add('🤖 AI detected: Potentially malicious (${confidence.toStringAsFixed(1)}% confidence)');
+          }
+        } else if (isSafe && confidence >= 80.0) {
+          risks.add('🤖 AI verified: Appears safe (${confidence.toStringAsFixed(1)}% confidence)');
         }
       }
     } catch (e) {
-      // ML prediction failed - continue with rule-based only
-      metadata['mlError'] = 'ML model not available';
+      // AI prediction failed - continue with rule-based only
+      metadata['aiError'] = 'AI model not available: ${e.toString()}';
+      print('AI Model Error: $e');
     }
-    */
 
 
     // 18. Final Risk Score Calculation
@@ -424,5 +437,42 @@ class SecurityService {
     if (score >= 40) return 'orange';
     if (score >= 20) return 'yellow';
     return 'green';
+  }
+
+  /// Call AI Model API for malicious URL detection
+  Future<Map<String, dynamic>?> _callAIModel(String url) async {
+    try {
+      print("🤖 Sending URL to AI model: $url");
+
+      final response = await http.post(
+        Uri.parse(AI_API_URL),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"url": url}),
+      ).timeout(const Duration(seconds: 5));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        bool isSafe = data['is_safe'] ?? false;
+        double confidence = (data['confidence'] ?? 0.0).toDouble();
+        String label = data['label'] ?? 'unknown';
+
+        print("🤖 AI Result: ${data['status']} ($confidence% confidence)");
+
+        return {
+          'is_safe': isSafe,
+          'confidence': confidence,
+          'label': label,
+          'status': data['status'],
+          'scan_time_ms': data['scan_time_ms'],
+        };
+      } else {
+        print("❌ AI Server Error: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("❌ AI Connection Error: $e");
+      return null;
+    }
   }
 }

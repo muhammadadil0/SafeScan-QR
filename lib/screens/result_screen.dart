@@ -100,21 +100,25 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData.light(),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                _getRiskColor().withOpacity(0.1),
-                Colors.white,
-              ],
-            ),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Scaffold(
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    _getRiskColor().withOpacity(0.2),
+                    Theme.of(context).scaffoldBackgroundColor,
+                  ]
+                : [
+                    _getRiskColor().withOpacity(0.1),
+                    Colors.white,
+                  ],
           ),
+        ),
         child: SafeArea(
           child: Column(
             children: [
@@ -125,7 +129,7 @@ class ResultScreen extends StatelessWidget {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Theme.of(context).cardColor,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -135,17 +139,17 @@ class ResultScreen extends StatelessWidget {
                         ],
                       ),
                       child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                        icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ),
                     const SizedBox(width: 16),
-                    const Text(
+                    Text(
                       'Scan Result',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Theme.of(context).textTheme.headlineMedium?.color,
                       ),
                     ),
                   ],
@@ -444,7 +448,6 @@ class ResultScreen extends StatelessWidget {
           ),
         ),
       ),
-      ),
     );
   }
 }
@@ -470,7 +473,7 @@ class _RiskScoreCircle extends StatelessWidget {
               height: 180,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white,
+                color: Theme.of(context).cardColor,
                 boxShadow: [
                   BoxShadow(
                     color: color.withOpacity(0.2),
@@ -487,7 +490,7 @@ class _RiskScoreCircle extends StatelessWidget {
               child: CircularProgressIndicator(
                 value: score / 100,
                 strokeWidth: 12,
-                backgroundColor: Colors.grey[200],
+                backgroundColor: Theme.of(context).dividerColor.withOpacity(0.1),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -507,7 +510,7 @@ class _RiskScoreCircle extends StatelessWidget {
                   'Risk Score',
                   style: TextStyle(
                     fontSize: 14,
-                    color: Colors.grey[700],
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -558,19 +561,19 @@ class _InfoRow extends StatelessWidget {
             width: 120,
             child: Text(
               '$label:',
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
             ),
           ),

@@ -42,6 +42,7 @@ SafeScan QR detects all these threats **before** you open the link!
 - ✅ **IP Address Detection** - Flags raw IP addresses
 - ✅ **HTTPS Verification** - Ensures secure connections
 - ✅ **Redirect Detection** - Tracks URL redirects
+- ✅ **AI Model Detection** - Machine learning-powered malicious URL detection
 
 ### 📊 **Risk Scoring System**
 
@@ -151,7 +152,15 @@ cd safescan-qr
 flutter pub get
 ```
 
-3. **Run the app**
+3. **(Optional) Set up AI Model Server**
+```bash
+cd backend
+pip install flask flask-cors transformers torch
+python app.py
+```
+See [AI_MODEL_SETUP.md](AI_MODEL_SETUP.md) for detailed instructions.
+
+4. **Run the app**
 ```bash
 flutter run
 ```
@@ -228,6 +237,7 @@ flutter run
 | Typosquatting | Fake domains | +35 |
 | Long Domain | Extremely long names | +10 |
 | Non-standard Port | Unusual ports | +15 |
+| AI Model | ML-powered detection | +40 |
 
 **Total Risk Score:** Sum of all points (0-100)
 
@@ -288,7 +298,7 @@ flutter run
 ## 🔮 Future Enhancements
 
 - [ ] Website preview screenshots
-- [ ] AI/ML risk prediction
+- [x] AI/ML risk prediction ✅ **COMPLETED**
 - [ ] More languages (Arabic, Pashto)
 - [ ] Cloud sync
 - [ ] QR code generator

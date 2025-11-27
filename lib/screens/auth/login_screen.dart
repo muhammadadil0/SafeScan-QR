@@ -104,11 +104,17 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                       -math.cos(_meshController.value * 2 * math.pi) * 0.5,
                       -math.sin(_meshController.value * 2 * math.pi) * 0.5,
                     ),
-                    colors: const [
-                      Color(0xFF667eea),
-                      Color(0xFF764ba2),
-                      Color(0xFFF093FB),
-                    ],
+                    colors: Theme.of(context).brightness == Brightness.dark
+                        ? [
+                            Theme.of(context).scaffoldBackgroundColor,
+                            Theme.of(context).colorScheme.surface,
+                            Theme.of(context).primaryColor.withOpacity(0.3),
+                          ]
+                        : const [
+                            Color(0xFF667eea),
+                            Color(0xFF764ba2),
+                            Color(0xFFF093FB),
+                          ],
                   ),
                 ),
               );
@@ -465,8 +471,10 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 18),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Colors.white, Color(0xFFF0F0F0)],
+            gradient: LinearGradient(
+              colors: Theme.of(context).brightness == Brightness.dark
+                  ? [Theme.of(context).primaryColor, Theme.of(context).colorScheme.secondary]
+                  : [Colors.white, const Color(0xFFF0F0F0)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -482,16 +490,20 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
             children: [
               Text(
                 widget.text,
-                style: const TextStyle(
-                  color: Color(0xFF667eea),
+                style: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF667eea),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_rounded,
-                color: Color(0xFF667eea),
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white
+                    : const Color(0xFF667eea),
               ),
             ],
           ),

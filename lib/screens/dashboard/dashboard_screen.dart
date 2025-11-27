@@ -6,6 +6,9 @@ import '../../services/history_service.dart';
 import '../result_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import '../../providers/theme_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -68,7 +71,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
     final List<Widget> screens = [
       HomeTab(statsController: _statsController),
       const SizedBox(),
-      const UrlCheckerTab(),
+      UrlCheckerTab(onBack: () => _onTabTapped(0)),
       const SettingsTab(),
     ];
 
@@ -157,12 +160,15 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF5F7FA), Color(0xFFE8EAF6)],
+          colors: isDark 
+            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
+            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
         ),
       ),
       child: SafeArea(
@@ -187,7 +193,7 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                               style: TextStyle(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey[900],
+                                color: Theme.of(context).textTheme.bodyLarge?.color,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -195,28 +201,56 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                               'Stay safe online',
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.grey[600],
+                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
                               ),
                             ),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                        Row(
+                          children: [
+                            // Theme Toggle
+                            Consumer<ThemeProvider>(
+                              builder: (context, theme, _) => Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).cardColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: IconButton(
+                                  icon: Icon(
+                                    theme.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                    color: theme.isDarkMode ? Colors.yellow : Colors.grey[800],
+                                  ),
+                                  onPressed: () => theme.toggleTheme(),
+                                ),
                               ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: Colors.grey[800],
-                          ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).cardColor,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.05),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.notifications_none_rounded,
+                                color: Theme.of(context).iconTheme.color,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -556,11 +590,11 @@ class _ActionCard extends StatelessWidget {
           onTap: onTap,
           child: Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Theme.of(context).cardTheme.color,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Theme.of(context).cardTheme.shadowColor!,
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -587,7 +621,7 @@ class _ActionCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    color: Colors.grey[800],
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                   ),
                 ),
               ],
@@ -605,7 +639,7 @@ class _EmptyState extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -613,14 +647,14 @@ class _EmptyState extends StatelessWidget {
           Icon(
             Icons.history_rounded,
             size: 64,
-            color: Colors.grey[300],
+            color: Theme.of(context).disabledColor,
           ),
           const SizedBox(height: 16),
           Text(
             'No recent activity',
             style: TextStyle(
               fontSize: 16,
-              color: Colors.grey[600],
+              color: Theme.of(context).textTheme.bodyMedium?.color,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -629,7 +663,7 @@ class _EmptyState extends StatelessWidget {
             'Start scanning to see your history',
             style: TextStyle(
               fontSize: 14,
-              color: Colors.grey[400],
+              color: Theme.of(context).textTheme.bodySmall?.color,
             ),
           ),
         ],
@@ -651,7 +685,7 @@ class _ModernBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardColor,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -757,7 +791,7 @@ class _NavItem extends StatelessWidget {
           children: [
             Icon(
               icon,
-              color: isActive ? const Color(0xFF667eea) : Colors.grey[400],
+              color: isActive ? const Color(0xFF667eea) : Theme.of(context).disabledColor,
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -765,7 +799,7 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isActive ? const Color(0xFF667eea) : Colors.grey[400],
+                color: isActive ? const Color(0xFF667eea) : Theme.of(context).disabledColor,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -777,7 +811,8 @@ class _NavItem extends StatelessWidget {
 }
 
 class UrlCheckerTab extends StatefulWidget {
-  const UrlCheckerTab({super.key});
+  final VoidCallback? onBack;
+  const UrlCheckerTab({super.key, this.onBack});
 
   @override
   State<UrlCheckerTab> createState() => _UrlCheckerTabState();
@@ -809,12 +844,15 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF5F7FA), Color(0xFFE8EAF6)],
+          colors: isDark 
+            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
+            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
         ),
       ),
       child: SafeArea(
@@ -823,27 +861,77 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                'URL Security Checker',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey[900],
-                ),
+              Row(
+                children: [
+                  if (widget.onBack != null)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).cardColor,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: IconButton(
+                          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
+                          onPressed: widget.onBack,
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: Text(
+                      'URL Security Checker',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).textTheme.headlineMedium?.color,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
                 'Enter any URL to check its safety instantly',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Colors.grey[600],
+                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF667eea).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.psychology, size: 16, color: Color(0xFF667eea)),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Powered by AI Malicious URL Detection',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF667eea),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 32),
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
@@ -855,36 +943,79 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                 ),
                 child: TextField(
                   controller: _controller,
-                  style: const TextStyle(
-                    color: Colors.black,
+                  onChanged: (_) => setState(() {}),
+                  style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     fontSize: 16,
                   ),
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     hintText: 'https://example.com',
-                    hintStyle: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 16,
-                    ),
-                    prefixIcon: Icon(Icons.link, color: Color(0xFF667eea)),
+                    hintStyle: TextStyle(color: Theme.of(context).hintColor),
                     border: InputBorder.none,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    contentPadding: const EdgeInsets.all(16),
+                    prefixIcon: Icon(Icons.link, color: Theme.of(context).primaryColor),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_controller.text.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _controller.clear()),
+                            color: Theme.of(context).disabledColor,
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.content_paste),
+                          onPressed: () async {
+                            final data = await Clipboard.getData(Clipboard.kTextPlain);
+                            if (data?.text != null) {
+                              setState(() => _controller.text = data!.text!);
+                            }
+                          },
+                          color: Theme.of(context).primaryColor,
+                        ),
+                      ],
+                    ),
                   ),
                   keyboardType: TextInputType.url,
+                  textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _checkUrl(),
                 ),
               ),
               const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _checkUrl,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  backgroundColor: const Color(0xFF667eea),
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                  elevation: 0,
+              Container(
+                width: double.infinity,
+                height: 56,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Theme.of(context).colorScheme.primary,
+                      Theme.of(context).colorScheme.secondary,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                child: const Text(
-                  'Analyze URL',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                child: ElevatedButton(
+                  onPressed: _checkUrl,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.transparent,
+                    shadowColor: Colors.transparent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text(
+                    'Analyze URL',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -900,12 +1031,15 @@ class SettingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFFF5F7FA), Color(0xFFE8EAF6)],
+          colors: isDark 
+            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
+            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
         ),
       ),
       child: SafeArea(
@@ -979,11 +1113,11 @@ class _SettingsTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).cardTheme.color,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Theme.of(context).cardTheme.shadowColor!,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -1002,7 +1136,7 @@ class _SettingsTile extends StatelessWidget {
         title: Text(
           title,
           style: TextStyle(
-            color: color ?? Colors.grey[900],
+            color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.w600,
             fontSize: 16,
           ),
@@ -1010,7 +1144,7 @@ class _SettingsTile extends StatelessWidget {
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            color: Colors.grey[600],
+            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
             fontSize: 14,
           ),
         ),

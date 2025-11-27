@@ -75,6 +75,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           keyboardType: TextInputType.url,
         ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.psychology, size: 14, color: Colors.blueAccent),
+                const SizedBox(width: 6),
+                Text(
+                  'AI Security Enabled',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.blueAccent,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
