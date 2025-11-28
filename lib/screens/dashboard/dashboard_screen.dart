@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:ui';
 import '../scanner_screen.dart';
+import '../history_screen.dart';
 import '../../services/security_service.dart';
 import '../../services/history_service.dart';
 import '../result_screen.dart';
@@ -8,6 +10,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/theme_provider.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -85,6 +88,55 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
   }
 }
 
+// Glassmorphism Container Widget
+class GlassContainer extends StatelessWidget {
+  final Widget child;
+  final double blur;
+  final double opacity;
+  final BorderRadius? borderRadius;
+  final EdgeInsets? padding;
+  final List<Color>? gradientColors;
+
+  const GlassContainer({
+    super.key,
+    required this.child,
+    this.blur = 10,
+    this.opacity = 0.1,
+    this.borderRadius,
+    this.padding,
+    this.gradientColors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: borderRadius ?? BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: gradientColors ?? [
+                Colors.white.withOpacity(opacity),
+                Colors.white.withOpacity(opacity * 0.5),
+              ],
+            ),
+            borderRadius: borderRadius ?? BorderRadius.circular(20),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
 class HomeTab extends StatefulWidget {
   final AnimationController statsController;
 
@@ -97,6 +149,7 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
   final SecurityService _securityService = SecurityService();
   late AnimationController _cardController;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
@@ -105,11 +158,16 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 800),
     )..forward();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
     _cardController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -130,7 +188,11 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No QR code found in image')),
+          SnackBar(
+            content: const Text('No QR code found in image'),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
     }
@@ -140,12 +202,15 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => Center(
+        child: GlassContainer(
+          padding: const EdgeInsets.all(40),
+          child: const CircularProgressIndicator(color: Colors.white),
+        ),
+      ),
     );
 
     final result = await _securityService.analyzeUrl(url);
-    
-    // Save to history
     final historyService = HistoryService();
     await historyService.saveScan(result);
 
@@ -167,15 +232,22 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark 
-            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
-            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
+            ? [
+                const Color(0xFF0A0E27),
+                const Color(0xFF1A1F3A),
+                const Color(0xFF2D1B4E),
+              ] 
+            : [
+                const Color(0xFFF0F4FF),
+                const Color(0xFFE8EEFF),
+                const Color(0xFFF5E6FF),
+              ],
         ),
       ),
       child: SafeArea(
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // Custom App Bar
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.all(24.0),
@@ -188,66 +260,93 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Hello, User 👋',
-                              style: TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).textTheme.bodyLarge?.color,
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                              ).createShader(bounds),
+                              child: const Text(
+                                'SafeScan QR',
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                  letterSpacing: -1,
+                                ),
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Stay safe online',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
-                              ),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Container(
+                                  width: 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFF00FF88),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF00FF88).withOpacity(0.5),
+                                        blurRadius: 8,
+                                        spreadRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'AI Protection Active',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: isDark ? Colors.white70 : Colors.black54,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                         Row(
                           children: [
-                            // Theme Toggle
                             Consumer<ThemeProvider>(
-                              builder: (context, theme, _) => Container(
-                                margin: const EdgeInsets.only(right: 12),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).cardColor,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: IconButton(
-                                  icon: Icon(
+                              builder: (context, theme, _) => GlassContainer(
+                                padding: const EdgeInsets.all(12),
+                                blur: 15,
+                                opacity: 0.15,
+                                child: InkWell(
+                                  onTap: () => theme.toggleTheme(),
+                                  child: Icon(
                                     theme.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
-                                    color: theme.isDarkMode ? Colors.yellow : Colors.grey[800],
+                                    color: theme.isDarkMode ? Colors.amber : const Color(0xFF667eea),
+                                    size: 24,
                                   ),
-                                  onPressed: () => theme.toggleTheme(),
                                 ),
                               ),
                             ),
-                            Container(
+                            const SizedBox(width: 12),
+                            GlassContainer(
                               padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).cardColor,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.05),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
+                              blur: 15,
+                              opacity: 0.15,
+                              child: Stack(
+                                children: [
+                                  Icon(
+                                    Icons.notifications_none_rounded,
+                                    color: isDark ? Colors.white : const Color(0xFF667eea),
+                                    size: 24,
+                                  ),
+                                  Positioned(
+                                    right: 0,
+                                    top: 0,
+                                    child: Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFFF3B6D),
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
                                   ),
                                 ],
-                              ),
-                              child: Icon(
-                                Icons.notifications_none_rounded,
-                                color: Theme.of(context).iconTheme.color,
                               ),
                             ),
                           ],
@@ -259,7 +358,6 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
               ),
             ),
 
-            // Stats Cards
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -273,7 +371,7 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                   )),
                   child: FadeTransition(
                     opacity: widget.statsController,
-                    child: _StatsCard(),
+                    child: _StatsCard(pulseController: _pulseController),
                   ),
                 ),
               ),
@@ -281,17 +379,32 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
 
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
 
-            // Quick Actions
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  'Quick Actions',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[900],
-                  ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Quick Actions',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: isDark ? Colors.white : Colors.black87,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -308,7 +421,7 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                   childAspectRatio: 1.1,
                 ),
                 delegate: SliverChildListDelegate([
-                  _ActionCard(
+                  _FuturisticActionCard(
                     icon: Icons.qr_code_scanner_rounded,
                     title: 'Scan QR',
                     gradient: const LinearGradient(
@@ -323,7 +436,7 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                     delay: 0,
                     controller: _cardController,
                   ),
-                  _ActionCard(
+                  _FuturisticActionCard(
                     icon: Icons.image_outlined,
                     title: 'Upload Image',
                     gradient: const LinearGradient(
@@ -333,53 +446,35 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
                     delay: 100,
                     controller: _cardController,
                   ),
-                  _ActionCard(
+                  _FuturisticActionCard(
                     icon: Icons.link_rounded,
                     title: 'Check URL',
                     gradient: const LinearGradient(
                       colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      final dashboardState = context.findAncestorStateOfType<_DashboardScreenState>();
+                      dashboardState?._onTabTapped(2);
+                    },
                     delay: 200,
                     controller: _cardController,
                   ),
-                  _ActionCard(
+                  _FuturisticActionCard(
                     icon: Icons.history_rounded,
                     title: 'History',
                     gradient: const LinearGradient(
                       colors: [Color(0xFFfa709a), Color(0xFFfee140)],
                     ),
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+                      );
+                    },
                     delay: 300,
                     controller: _cardController,
                   ),
                 ]),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 32)),
-
-            // Recent Activity
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Text(
-                  'Recent Activity',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[900],
-                  ),
-                ),
-              ),
-            ),
-
-            const SliverToBoxAdapter(child: SizedBox(height: 16)),
-
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: _EmptyState(),
               ),
             ),
 
@@ -392,6 +487,10 @@ class _HomeTabState extends State<HomeTab> with TickerProviderStateMixin {
 }
 
 class _StatsCard extends StatefulWidget {
+  final AnimationController pulseController;
+  
+  const _StatsCard({required this.pulseController});
+
   @override
   State<_StatsCard> createState() => _StatsCardState();
 }
@@ -421,95 +520,149 @@ class _StatsCardState extends State<_StatsCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    return GlassContainer(
       padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF667eea).withOpacity(0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
+      blur: 20,
+      opacity: isDark ? 0.15 : 0.3,
+      gradientColors: [
+        const Color(0xFF667eea).withOpacity(0.3),
+        const Color(0xFF764ba2).withOpacity(0.2),
+      ],
+      child: Stack(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.shield_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Protection Status',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 14,
-                      ),
+          Positioned(
+            right: -20,
+            top: -20,
+            child: AnimatedBuilder(
+              animation: widget.pulseController,
+              builder: (context, child) {
+                return Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        const Color(0xFF667eea).withOpacity(0.3 * widget.pulseController.value),
+                        Colors.transparent,
+                      ],
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Fully Protected',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+                  ),
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 24),
-          Row(
+          Column(
             children: [
-              Expanded(
-                child: _StatItem(
-                  label: 'Scans',
-                  value: '${_stats['total']}',
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF667eea).withOpacity(0.5),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.shield_rounded,
+                      color: Colors.white,
+                      size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Protection Status',
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.7),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Fully Protected',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.white.withOpacity(0.2),
-              ),
-              Expanded(
-                child: _StatItem(
-                  label: 'Blocked',
-                  value: '${_stats['blocked']}',
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 40,
-                color: Colors.white.withOpacity(0.2),
-              ),
-              Expanded(
-                child: _StatItem(
-                  label: 'Safe',
-                  value: '${_stats['safe']}',
-                ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: _StatItem(
+                      label: 'Total Scans',
+                      value: '${_stats['total']}',
+                      icon: Icons.qr_code_scanner,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(0.0),
+                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _StatItem(
+                      label: 'Blocked',
+                      value: '${_stats['blocked']}',
+                      icon: Icons.block,
+                      color: const Color(0xFFFF3B6D),
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(0.0),
+                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: _StatItem(
+                      label: 'Safe',
+                      value: '${_stats['safe']}',
+                      icon: Icons.check_circle,
+                      color: const Color(0xFF00FF88),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -522,19 +675,33 @@ class _StatsCardState extends State<_StatsCard> {
 class _StatItem extends StatelessWidget {
   final String label;
   final String value;
+  final IconData icon;
+  final Color? color;
 
-  const _StatItem({required this.label, required this.value});
+  const _StatItem({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        Icon(
+          icon,
+          color: color ?? Colors.white,
+          size: 20,
+        ),
+        const SizedBox(height: 8),
         Text(
           value,
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            letterSpacing: -1,
           ),
         ),
         const SizedBox(height: 4),
@@ -543,6 +710,7 @@ class _StatItem extends StatelessWidget {
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
             fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -550,7 +718,7 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+class _FuturisticActionCard extends StatelessWidget {
   final IconData icon;
   final String title;
   final LinearGradient gradient;
@@ -558,7 +726,7 @@ class _ActionCard extends StatelessWidget {
   final int delay;
   final AnimationController controller;
 
-  const _ActionCard({
+  const _FuturisticActionCard({
     required this.icon,
     required this.title,
     required this.gradient,
@@ -569,6 +737,7 @@ class _ActionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return SlideTransition(
       position: Tween<Offset>(
         begin: const Offset(0, 0.5),
@@ -588,85 +757,49 @@ class _ActionCard extends StatelessWidget {
         ),
         child: GestureDetector(
           onTap: onTap,
-          child: Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).cardTheme.color,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).cardTheme.shadowColor!,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
+          child: GlassContainer(
+            blur: 15,
+            opacity: isDark ? 0.1 : 0.2,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
                     gradient: gradient,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradient.colors.first.withOpacity(0.4),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: Icon(
                     icon,
                     color: Colors.white,
-                    size: 32,
+                    size: 30,
                   ),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                    letterSpacing: -0.3,
                   ),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.history_rounded,
-            size: 64,
-            color: Theme.of(context).disabledColor,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No recent activity',
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context).textTheme.bodyMedium?.color,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Start scanning to see your history',
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).textTheme.bodySmall?.color,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -683,49 +816,73 @@ class _ModernBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
     return Container(
+      margin: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, -5),
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(
-                icon: Icons.dashboard_rounded,
-                label: 'Home',
-                isActive: currentIndex == 0,
-                onTap: () => onTap(0),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isDark
+                    ? [
+                        const Color(0xFF1A1F3A).withOpacity(0.9),
+                        const Color(0xFF2D1B4E).withOpacity(0.9),
+                      ]
+                    : [
+                        Colors.white.withOpacity(0.9),
+                        Colors.white.withOpacity(0.8),
+                      ],
               ),
-              _NavItem(
-                icon: Icons.qr_code_scanner_rounded,
-                label: 'Scan',
-                isActive: currentIndex == 1,
-                onTap: () => onTap(1),
-                isCenter: true,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
               ),
-              _NavItem(
-                icon: Icons.link_rounded,
-                label: 'Check',
-                isActive: currentIndex == 2,
-                onTap: () => onTap(2),
-              ),
-              _NavItem(
-                icon: Icons.settings_rounded,
-                label: 'Settings',
-                isActive: currentIndex == 3,
-                onTap: () => onTap(3),
-              ),
-            ],
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _NavItem(
+                  icon: Icons.dashboard_rounded,
+                  label: 'Home',
+                  isActive: currentIndex == 0,
+                  onTap: () => onTap(0),
+                ),
+                _NavItem(
+                  icon: Icons.qr_code_scanner_rounded,
+                  label: 'Scan',
+                  isActive: currentIndex == 1,
+                  onTap: () => onTap(1),
+                  isCenter: true,
+                ),
+                _NavItem(
+                  icon: Icons.link_rounded,
+                  label: 'Check',
+                  isActive: currentIndex == 2,
+                  onTap: () => onTap(2),
+                ),
+                _NavItem(
+                  icon: Icons.settings_rounded,
+                  label: 'Settings',
+                  isActive: currentIndex == 3,
+                  onTap: () => onTap(3),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -750,6 +907,8 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    
     if (isCenter) {
       return GestureDetector(
         onTap: onTap,
@@ -762,9 +921,9 @@ class _NavItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF667eea).withOpacity(0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF667eea).withOpacity(0.5),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -780,27 +939,31 @@ class _NavItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+        duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: isActive ? const Color(0xFF667eea).withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          gradient: isActive
+              ? const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                )
+              : null,
+          borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isActive ? const Color(0xFF667eea) : Theme.of(context).disabledColor,
+              color: isActive ? Colors.white : (isDark ? Colors.white54 : Colors.black45),
               size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
-                color: isActive ? const Color(0xFF667eea) : Theme.of(context).disabledColor,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                fontSize: 11,
+                color: isActive ? Colors.white : (isDark ? Colors.white54 : Colors.black45),
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
           ],
@@ -818,9 +981,25 @@ class UrlCheckerTab extends StatefulWidget {
   State<UrlCheckerTab> createState() => _UrlCheckerTabState();
 }
 
-class _UrlCheckerTabState extends State<UrlCheckerTab> {
+class _UrlCheckerTabState extends State<UrlCheckerTab> with TickerProviderStateMixin {
   final TextEditingController _controller = TextEditingController();
   final SecurityService _securityService = SecurityService();
+  late AnimationController _scanAnimController;
+
+  @override
+  void initState() {
+    super.initState();
+    _scanAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _scanAnimController.dispose();
+    super.dispose();
+  }
 
   void _checkUrl() async {
     if (_controller.text.isEmpty) return;
@@ -828,7 +1007,22 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => const Center(child: CircularProgressIndicator()),
+      builder: (context) => Center(
+        child: GlassContainer(
+          padding: const EdgeInsets.all(40),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(color: Colors.white),
+              const SizedBox(height: 16),
+              const Text(
+                'Analyzing URL...',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
 
     final result = await _securityService.analyzeUrl(_controller.text);
@@ -851,8 +1045,16 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark 
-            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
-            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
+            ? [
+                const Color(0xFF0A0E27),
+                const Color(0xFF1A1F3A),
+                const Color(0xFF2D1B4E),
+              ] 
+            : [
+                const Color(0xFFF0F4FF),
+                const Color(0xFFE8EEFF),
+                const Color(0xFFF5E6FF),
+              ],
         ),
       ),
       child: SafeArea(
@@ -866,30 +1068,32 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                   if (widget.onBack != null)
                     Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).cardColor,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 10,
-                            ),
-                          ],
-                        ),
-                        child: IconButton(
-                          icon: Icon(Icons.arrow_back, color: Theme.of(context).iconTheme.color),
-                          onPressed: widget.onBack,
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(12),
+                        blur: 15,
+                        opacity: 0.15,
+                        child: InkWell(
+                          onTap: widget.onBack,
+                          child: Icon(
+                            Icons.arrow_back,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
                         ),
                       ),
                     ),
                   Expanded(
-                    child: Text(
-                      'URL Security Checker',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).textTheme.headlineMedium?.color,
+                    child: ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                      ).createShader(bounds),
+                      child: const Text(
+                        'URL Checker',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -1,
+                        ),
                       ),
                     ),
                   ),
@@ -897,63 +1101,75 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Enter any URL to check its safety instantly',
+                'Enter any URL to check its safety',
                 style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF667eea).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF667eea).withOpacity(0.3)),
-                ),
+              const SizedBox(height: 24),
+              GlassContainer(
+                padding: const EdgeInsets.all(6),
+                blur: 15,
+                opacity: isDark ? 0.15 : 0.3,
+                gradientColors: [
+                  const Color(0xFF4facfe).withOpacity(0.2),
+                  const Color(0xFF00f2fe).withOpacity(0.1),
+                ],
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.psychology, size: 16, color: Color(0xFF667eea)),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Powered by AI Malicious URL Detection',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF667eea),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.psychology, size: 16, color: Colors.white),
+                          const SizedBox(width: 6),
+                          const Text(
+                            'AI Powered',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 32),
-              Container(
+              GlassContainer(
                 padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
+                blur: 15,
+                opacity: isDark ? 0.15 : 0.3,
                 child: TextField(
                   controller: _controller,
                   onChanged: (_) => setState(() {}),
                   style: TextStyle(
-                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                    color: isDark ? Colors.white : Colors.black87,
                     fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
                   decoration: InputDecoration(
                     hintText: 'https://example.com',
-                    hintStyle: TextStyle(color: Theme.of(context).hintColor),
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white38 : Colors.black38,
+                    ),
                     border: InputBorder.none,
-                    contentPadding: const EdgeInsets.all(16),
-                    prefixIcon: Icon(Icons.link, color: Theme.of(context).primaryColor),
+                    contentPadding: const EdgeInsets.all(20),
+                    prefixIcon: Icon(
+                      Icons.link,
+                      color: const Color(0xFF4facfe),
+                    ),
                     suffixIcon: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -961,7 +1177,7 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                           IconButton(
                             icon: const Icon(Icons.clear),
                             onPressed: () => setState(() => _controller.clear()),
-                            color: Theme.of(context).disabledColor,
+                            color: isDark ? Colors.white54 : Colors.black45,
                           ),
                         IconButton(
                           icon: const Icon(Icons.content_paste),
@@ -971,7 +1187,7 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                               setState(() => _controller.text = data!.text!);
                             }
                           },
-                          color: Theme.of(context).primaryColor,
+                          color: const Color(0xFF4facfe),
                         ),
                       ],
                     ),
@@ -981,23 +1197,20 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                   onSubmitted: (_) => _checkUrl(),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               Container(
                 width: double.infinity,
-                height: 56,
+                height: 60,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
                   ),
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
+                      color: const Color(0xFF4facfe).withOpacity(0.5),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
                     ),
                   ],
                 ),
@@ -1006,18 +1219,46 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.transparent,
                     shadowColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   ),
                   child: const Text(
                     'Analyze URL',
                     style: TextStyle(
                       fontSize: 18,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
                       color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
                 ),
               ),
+              const Spacer(),
+              Center(
+                child: AnimatedBuilder(
+                  animation: _scanAnimController,
+                  builder: (context, child) {
+                    return Transform.rotate(
+                      angle: _scanAnimController.value * 2 * math.pi,
+                      child: Container(
+                        width: 200,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: SweepGradient(
+                            colors: [
+                              Colors.transparent,
+                              const Color(0xFF4facfe).withOpacity(0.3),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const Spacer(),
             ],
           ),
         ),
@@ -1038,53 +1279,113 @@ class SettingsTab extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark 
-            ? [const Color(0xFF0B0F19), const Color(0xFF1A1F2E)] 
-            : [const Color(0xFFF5F7FA), const Color(0xFFE8EAF6)],
+            ? [
+                const Color(0xFF0A0E27),
+                const Color(0xFF1A1F3A),
+                const Color(0xFF2D1B4E),
+              ] 
+            : [
+                const Color(0xFFF0F4FF),
+                const Color(0xFFE8EEFF),
+                const Color(0xFFF5E6FF),
+              ],
         ),
       ),
       child: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(24),
           children: [
-            Text(
-              'Settings',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[900],
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFFfa709a), Color(0xFFfee140)],
+              ).createShader(bounds),
+              child: const Text(
+                'Settings',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -1,
+                ),
               ),
             ),
             const SizedBox(height: 24),
-            _SettingsTile(
+            _FuturisticSettingsTile(
               icon: Icons.person_outline,
               title: 'Profile',
               subtitle: 'Manage your account',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              ),
               onTap: () {},
             ),
-            _SettingsTile(
+            const SizedBox(height: 12),
+            _FuturisticSettingsTile(
               icon: Icons.history,
               title: 'Scan History',
               subtitle: 'View all your scans',
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4facfe), Color(0xFF00f2fe)],
+              ),
               onTap: () {},
             ),
-            _SettingsTile(
+            const SizedBox(height: 12),
+            _FuturisticSettingsTile(
               icon: Icons.security,
               title: 'Security',
               subtitle: 'Privacy & security settings',
+              gradient: const LinearGradient(
+                colors: [Color(0xFFf093fb), Color(0xFFF5576C)],
+              ),
               onTap: () {},
             ),
-            _SettingsTile(
+            const SizedBox(height: 12),
+            _FuturisticSettingsTile(
               icon: Icons.help_outline,
               title: 'Help & Support',
               subtitle: 'Get help and contact us',
+              gradient: const LinearGradient(
+                colors: [Color(0xFFfa709a), Color(0xFFfee140)],
+              ),
               onTap: () {},
             ),
-            _SettingsTile(
+            const SizedBox(height: 12),
+            _FuturisticSettingsTile(
               icon: Icons.logout,
               title: 'Logout',
               subtitle: 'Sign out of your account',
-              color: Colors.red,
-              onTap: () {},
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF3B6D), Color(0xFFFF6B9D)],
+              ),
+              onTap: () async {
+                // Show confirmation dialog
+                final shouldLogout = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Logout'),
+                    content: const Text('Are you sure you want to logout?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFF3B6D),
+                        ),
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (shouldLogout == true && context.mounted) {
+                  // Logout
+                  await FirebaseAuth.instance.signOut();
+                  // Navigation will be handled automatically by AuthWrapper
+                }
+              },
             ),
           ],
         ),
@@ -1093,64 +1394,72 @@ class SettingsTab extends StatelessWidget {
   }
 }
 
-class _SettingsTile extends StatelessWidget {
+class _FuturisticSettingsTile extends StatelessWidget {
   final IconData icon;
   final String title;
   final String subtitle;
+  final LinearGradient gradient;
   final VoidCallback onTap;
-  final Color? color;
 
-  const _SettingsTile({
+  const _FuturisticSettingsTile({
     required this.icon,
     required this.title,
     required this.subtitle,
+    required this.gradient,
     required this.onTap,
-    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).cardTheme.shadowColor!,
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    return GlassContainer(
+      blur: 15,
+      opacity: isDark ? 0.1 : 0.2,
+      padding: const EdgeInsets.all(4),
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: (color ?? const Color(0xFF667eea)).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: gradient.colors.first.withOpacity(0.4),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          child: Icon(icon, color: color ?? const Color(0xFF667eea)),
+          child: Icon(icon, color: Colors.white, size: 24),
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: color ?? Theme.of(context).textTheme.bodyLarge?.color,
-            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white : Colors.black87,
+            fontWeight: FontWeight.w700,
             fontSize: 16,
+            letterSpacing: -0.3,
           ),
         ),
         subtitle: Text(
           subtitle,
           style: TextStyle(
-            color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7),
+            color: isDark ? Colors.white60 : Colors.black54,
             fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
-        trailing: Icon(
-          Icons.chevron_right,
-          color: Colors.grey[400],
+        trailing: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: (isDark ? Colors.white : Colors.black).withOpacity(0.05),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(
+            Icons.chevron_right,
+            color: isDark ? Colors.white54 : Colors.black45,
+          ),
         ),
         onTap: onTap,
       ),

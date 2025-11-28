@@ -21,6 +21,11 @@ dependencies:
   shared_preferences: ^2.5.3
   provider: ^6.1.1
   # tflite_flutter: ^0.10.4  # Temporarily disabled - compatibility issue with Flutter SDK
+  
+  # Firebase
+  firebase_core: ^3.8.1
+  firebase_auth: ^5.3.4
+  cloud_firestore: ^5.5.2
 
 dev_dependencies:
   flutter_test:

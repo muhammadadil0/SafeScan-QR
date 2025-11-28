@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../dashboard/dashboard_screen.dart';
+import '../../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -13,18 +14,24 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _nameFocusNode = FocusNode();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
+  final _confirmPasswordFocusNode = FocusNode();
+  final _authService = AuthService();
   
   late AnimationController _meshController;
   late AnimationController _cardController;
   late AnimationController _particleController;
   
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isNameFocused = false;
   bool _isEmailFocused = false;
   bool _isPasswordFocused = false;
+  bool _isConfirmPasswordFocused = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -56,6 +63,10 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     _passwordFocusNode.addListener(() {
       setState(() => _isPasswordFocused = _passwordFocusNode.hasFocus);
     });
+    
+    _confirmPasswordFocusNode.addListener(() {
+      setState(() => _isConfirmPasswordFocused = _confirmPasswordFocusNode.hasFocus);
+    });
   }
 
   @override
@@ -66,28 +77,79 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _nameFocusNode.dispose();
     _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
+    _confirmPasswordFocusNode.dispose();
     super.dispose();
   }
 
-  void _signup() {
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
-              child: child,
-            ),
-          );
-        },
+  void _signup() async {
+    if (_nameController.text.trim().isEmpty ||
+        _emailController.text.trim().isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showError('Passwords do not match');
+      return;
+    }
+
+    if (_passwordController.text.length < 6) {
+      _showError('Password must be at least 6 characters');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.signUpWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        name: _nameController.text.trim(),
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                  ),
+                  child: child,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -97,7 +159,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     return Scaffold(
       body: Stack(
         children: [
-          // Animated gradient mesh background (same as login)
+          // Animated gradient mesh background
           AnimatedBuilder(
             animation: _meshController,
             builder: (context, child) {
@@ -119,9 +181,9 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                             Theme.of(context).primaryColor.withOpacity(0.3),
                           ]
                         : const [
-                            Color(0xFF667eea),
-                            Color(0xFF764ba2),
-                            Color(0xFFF093FB),
+                            Color(0xFF4facfe),
+                            Color(0xFF00f2fe),
+                            Color(0xFF43e97b),
                           ],
                   ),
                 ),
@@ -129,7 +191,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
             },
           ),
           
-          // Floating particles (same as login)
+          // Floating particles
           ...List.generate(15, (index) => _AnimatedParticle(
             controller: _particleController,
             index: index,
@@ -147,15 +209,12 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                     
                     // Back button
                     Align(
-                      alignment: Alignment.topLeft,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
-                          onPressed: () => Navigator.pop(context),
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.2),
                         ),
                       ),
                     ),
@@ -193,13 +252,13 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           child: const Icon(
                             Icons.person_add_rounded,
                             size: 60,
-                            color: Color(0xFF667eea),
+                            color: Color(0xFF4facfe),
                           ),
                         ),
                       ),
                     ),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 30),
                     
                     // Welcome text
                     FadeTransition(
@@ -217,7 +276,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           ),
                           SizedBox(height: 8),
                           Text(
-                            'Join SafeScan QR today',
+                            'Sign up to get started',
                             style: TextStyle(
                               fontSize: 16,
                               color: Colors.white70,
@@ -227,7 +286,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                       ),
                     ),
                     
-                    const SizedBox(height: 50),
+                    const SizedBox(height: 40),
                     
                     // Glassmorphic card
                     SlideTransition(
@@ -268,7 +327,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 focusNode: _nameFocusNode,
                                 isFocused: _isNameFocused,
                                 hintText: 'Full Name',
-                                icon: Icons.person_outline_rounded,
+                                icon: Icons.person_outline,
                               ),
                               
                               const SizedBox(height: 20),
@@ -304,15 +363,24 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 ),
                               ),
                               
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 20),
                               
-                              // Terms text
-                              Text(
-                                'By signing up, you agree to our Terms & Privacy Policy',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withOpacity(0.7),
-                                  fontSize: 12,
+                              // Confirm Password field
+                              _GlassTextField(
+                                controller: _confirmPasswordController,
+                                focusNode: _confirmPasswordFocusNode,
+                                isFocused: _isConfirmPasswordFocused,
+                                hintText: 'Confirm Password',
+                                icon: Icons.lock_outline,
+                                obscureText: _obscureConfirmPassword,
+                                suffixIcon: IconButton(
+                                  icon: Icon(
+                                    _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                    color: Colors.white70,
+                                  ),
+                                  onPressed: () {
+                                    setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                                  },
                                 ),
                               ),
                               
@@ -320,8 +388,9 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                               
                               // Signup button
                               _AnimatedButton(
-                                onPressed: _signup,
-                                text: 'Create Account',
+                                onPressed: _isLoading ? () {} : _signup,
+                                text: _isLoading ? 'Creating Account...' : 'Sign Up',
+                                isLoading: _isLoading,
                               ),
                             ],
                           ),
@@ -430,10 +499,12 @@ class _GlassTextField extends StatelessWidget {
 class _AnimatedButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String text;
+  final bool isLoading;
 
   const _AnimatedButton({
     required this.onPressed,
     required this.text,
+    this.isLoading = false,
   });
 
   @override
@@ -496,28 +567,39 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                widget.text,
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : const Color(0xFF667eea),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          child: widget.isLoading
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4facfe)),
+                    ),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.text,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF4facfe),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF4facfe),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : const Color(0xFF667eea),
-              ),
-            ],
-          ),
         ),
       ),
     );

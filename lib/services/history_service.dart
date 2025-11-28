@@ -1,27 +1,61 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/scan_result.dart';
 
 class HistoryService {
   static const String _historyKey = 'scan_history';
   static const int _maxHistoryItems = 100;
+  
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// Save a scan result to history
+  /// Save a scan result to history (Firebase + Local)
   Future<void> saveScan(ScanResult result) async {
+    // Save to local storage
     final prefs = await SharedPreferences.getInstance();
     final history = await getHistory();
-    
-    // Add new scan at the beginning
     history.insert(0, result);
-    
-    // Limit history size
     if (history.length > _maxHistoryItems) {
       history.removeRange(_maxHistoryItems, history.length);
     }
-    
-    // Convert to JSON and save
     final jsonList = history.map((scan) => scan.toJson()).toList();
     await prefs.setString(_historyKey, jsonEncode(jsonList));
+    
+    // Save to Firebase if user is logged in
+    final user = _auth.currentUser;
+    if (user != null) {
+      try {
+        // Save scan to user's history collection
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('scans')
+            .add({
+          'url': result.originalUrl,
+          'status': result.status.toString().split('.').last,
+          'riskScore': result.riskScore,
+          'riskFactors': result.riskFactors,
+          'timestamp': FieldValue.serverTimestamp(),
+          'metadata': result.metadata,
+        });
+        
+        // Update user stats
+        final isSafe = result.status == SecurityStatus.safe;
+        final isBlocked = result.status == SecurityStatus.dangerous;
+        
+        await _firestore.collection('users').doc(user.uid).update({
+          'totalScans': FieldValue.increment(1),
+          if (isSafe) 'safeScans': FieldValue.increment(1),
+          if (isBlocked) 'blockedScans': FieldValue.increment(1),
+          'lastScanAt': FieldValue.serverTimestamp(),
+        });
+      } catch (e) {
+        print('Error saving to Firebase: $e');
+        // Continue even if Firebase save fails
+      }
+    }
   }
 
   /// Get all scan history
@@ -53,15 +87,36 @@ class HistoryService {
     }).toList();
   }
 
-  /// Get statistics
+  /// Get statistics (from Firebase if logged in, otherwise local)
   Future<Map<String, int>> getStatistics() async {
-    final history = await getHistory();
+    final user = _auth.currentUser;
     
+    // Try to get from Firebase first
+    if (user != null) {
+      try {
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data()!;
+          return {
+            'total': data['totalScans'] ?? 0,
+            'safe': data['safeScans'] ?? 0,
+            'blocked': data['blockedScans'] ?? 0,
+            'suspicious': 0,
+            'dangerous': data['blockedScans'] ?? 0,
+          };
+        }
+      } catch (e) {
+        print('Error getting Firebase stats: $e');
+      }
+    }
+    
+    // Fallback to local storage
+    final history = await getHistory();
     int totalScans = history.length;
     int safeScans = history.where((s) => s.status == SecurityStatus.safe).length;
     int suspiciousScans = history.where((s) => s.status == SecurityStatus.suspicious).length;
     int dangerousScans = history.where((s) => s.status == SecurityStatus.dangerous).length;
-    int blockedScans = dangerousScans; // Dangerous ones are considered blocked
+    int blockedScans = dangerousScans;
     
     return {
       'total': totalScans,
@@ -70,6 +125,31 @@ class HistoryService {
       'dangerous': dangerousScans,
       'blocked': blockedScans,
     };
+  }
+  
+  /// Get history from Firebase
+  Future<List<Map<String, dynamic>>> getFirebaseHistory() async {
+    final user = _auth.currentUser;
+    if (user == null) return [];
+    
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('scans')
+          .orderBy('timestamp', descending: true)
+          .limit(100)
+          .get();
+      
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
+    } catch (e) {
+      print('Error getting Firebase history: $e');
+      return [];
+    }
   }
 
   /// Clear all history

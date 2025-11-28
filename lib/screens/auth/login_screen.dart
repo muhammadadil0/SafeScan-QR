@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math' as math;
 import '../dashboard/dashboard_screen.dart';
 import 'signup_screen.dart';
+import '../../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   final _passwordController = TextEditingController();
   final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
+  final _authService = AuthService();
   
   late AnimationController _meshController;
   late AnimationController _cardController;
@@ -23,6 +25,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   bool _obscurePassword = true;
   bool _isEmailFocused = false;
   bool _isPasswordFocused = false;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -64,22 +67,57 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     super.dispose();
   }
 
-  void _login() {
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(
-            opacity: animation,
-            child: ScaleTransition(
-              scale: Tween<double>(begin: 0.8, end: 1.0).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-              ),
-              child: child,
-            ),
-          );
-        },
+  void _login() async {
+    if (_emailController.text.trim().isEmpty || _passwordController.text.isEmpty) {
+      _showError('Please fill in all fields');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.signInWithEmail(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          PageRouteBuilder(
+            pageBuilder: (context, animation, secondaryAnimation) => const DashboardScreen(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(
+                opacity: animation,
+                child: ScaleTransition(
+                  scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                    CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+                  ),
+                  child: child,
+                ),
+              );
+            },
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -289,8 +327,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               
                               // Login button
                               _AnimatedButton(
-                                onPressed: _login,
-                                text: 'Sign In',
+                                onPressed: _isLoading ? () {} : _login,
+                                text: _isLoading ? 'Signing In...' : 'Sign In',
+                                isLoading: _isLoading,
                               ),
                             ],
                           ),
@@ -419,10 +458,12 @@ class _GlassTextField extends StatelessWidget {
 class _AnimatedButton extends StatefulWidget {
   final VoidCallback onPressed;
   final String text;
+  final bool isLoading;
 
   const _AnimatedButton({
     required this.onPressed,
     required this.text,
+    this.isLoading = false,
   });
 
   @override
@@ -485,28 +526,39 @@ class _AnimatedButtonState extends State<_AnimatedButton> with SingleTickerProvi
               ),
             ],
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                widget.text,
-                style: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : const Color(0xFF667eea),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+          child: widget.isLoading
+              ? const Center(
+                  child: SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 3,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      widget.text,
+                      style: TextStyle(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.white
+                            : const Color(0xFF667eea),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white
+                          : const Color(0xFF667eea),
+                    ),
+                  ],
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(
-                Icons.arrow_forward_rounded,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white
-                    : const Color(0xFF667eea),
-              ),
-            ],
-          ),
         ),
       ),
     );

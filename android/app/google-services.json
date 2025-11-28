@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "769772565002",
+    "project_id": "safescan-384a4",
+    "storage_bucket": "safescan-384a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:769772565002:android:038ec76d3e6abb7a6c25f3",
+        "android_client_info": {
+          "package_name": "com.example.safe_scan_qr"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyARtsA00Td_ijLepWtbmA2Jnem8vDIGnag"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
