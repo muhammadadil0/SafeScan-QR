@@ -4,6 +4,7 @@ import 'dart:ui';
 import '../services/history_service.dart';
 import '../providers/theme_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

@@ -12,6 +12,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../providers/theme_provider.dart';
+import '../browser/browser_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -75,6 +76,7 @@ class _DashboardScreenState extends State<DashboardScreen> with TickerProviderSt
       HomeTab(statsController: _statsController),
       const SizedBox(),
       UrlCheckerTab(onBack: () => _onTabTapped(0)),
+      const BrowserTab(),
       const SettingsTab(),
     ];
 
@@ -853,35 +855,44 @@ class _ModernBottomNav extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(30),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _NavItem(
-                  icon: Icons.dashboard_rounded,
-                  label: 'Home',
-                  isActive: currentIndex == 0,
-                  onTap: () => onTap(0),
-                ),
-                _NavItem(
-                  icon: Icons.qr_code_scanner_rounded,
-                  label: 'Scan',
-                  isActive: currentIndex == 1,
-                  onTap: () => onTap(1),
-                  isCenter: true,
-                ),
-                _NavItem(
-                  icon: Icons.link_rounded,
-                  label: 'Check',
-                  isActive: currentIndex == 2,
-                  onTap: () => onTap(2),
-                ),
-                _NavItem(
-                  icon: Icons.settings_rounded,
-                  label: 'Settings',
-                  isActive: currentIndex == 3,
-                  onTap: () => onTap(3),
-                ),
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _NavItem(
+                    icon: Icons.dashboard_rounded,
+                    label: 'Home',
+                    isActive: currentIndex == 0,
+                    onTap: () => onTap(0),
+                  ),
+                  _NavItem(
+                    icon: Icons.qr_code_scanner_rounded,
+                    label: 'Scan',
+                    isActive: currentIndex == 1,
+                    onTap: () => onTap(1),
+                    isCenter: true,
+                  ),
+                  _NavItem(
+                    icon: Icons.link_rounded,
+                    label: 'Check',
+                    isActive: currentIndex == 2,
+                    onTap: () => onTap(2),
+                  ),
+                  _NavItem(
+                    icon: Icons.language_rounded,
+                    label: 'Browser',
+                    isActive: currentIndex == 3,
+                    onTap: () => onTap(3),
+                  ),
+                  _NavItem(
+                    icon: Icons.settings_rounded,
+                    label: 'Settings',
+                    isActive: currentIndex == 4,
+                    onTap: () => onTap(4),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -908,53 +919,20 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
-    
-    if (isCenter) {
-      return GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-            ),
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF667eea).withOpacity(0.5),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 28,
-          ),
-        ),
-      );
-    }
 
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          gradient: isActive
-              ? const LinearGradient(
-                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
-                )
-              : null,
-          borderRadius: BorderRadius.circular(16),
-        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isActive ? Colors.white : (isDark ? Colors.white54 : Colors.black45),
+              color: isActive 
+                  ? (isDark ? Colors.white : Colors.black87)
+                  : (isDark ? Colors.white.withOpacity(0.4) : Colors.black.withOpacity(0.35)),
               size: 24,
             ),
             const SizedBox(height: 4),
@@ -962,7 +940,9 @@ class _NavItem extends StatelessWidget {
               label,
               style: TextStyle(
                 fontSize: 11,
-                color: isActive ? Colors.white : (isDark ? Colors.white54 : Colors.black45),
+                color: isActive 
+                    ? (isDark ? Colors.white : Colors.black87)
+                    : (isDark ? Colors.white.withOpacity(0.4) : Colors.black.withOpacity(0.35)),
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
@@ -1058,7 +1038,7 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> with TickerProviderStateM
         ),
       ),
       child: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1232,7 +1212,7 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> with TickerProviderStateM
                   ),
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 40),
               Center(
                 child: AnimatedBuilder(
                   animation: _scanAnimController,
@@ -1258,10 +1238,351 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> with TickerProviderStateM
                   },
                 ),
               ),
-              const Spacer(),
+              const SizedBox(height: 40),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class BrowserTab extends StatelessWidget {
+  const BrowserTab({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Provider.of<ThemeProvider>(context).isDarkMode;
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isDark 
+            ? [
+                const Color(0xFF0A0E27),
+                const Color(0xFF1A1F3A),
+                const Color(0xFF2D1B4E),
+              ] 
+            : [
+                const Color(0xFFF0F4FF),
+                const Color(0xFFE8EEFF),
+                const Color(0xFFF5E6FF),
+              ],
+        ),
+      ),
+      child: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                ).createShader(bounds),
+                child: const Text(
+                  'Secure Browser',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -1,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Browse safely with tracking & analytics',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 32),
+              
+              // Main Browser Button
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const BrowserScreen(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF667eea).withOpacity(0.5),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.language_rounded,
+                          size: 64,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Open Browser',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Start browsing with full tracking',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+              
+              // Features Grid
+              Row(
+                children: [
+                  Expanded(
+                    child: _FeatureCard(
+                      icon: Icons.history,
+                      title: 'History',
+                      description: 'Track all visits',
+                      color: const Color(0xFF4facfe),
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _FeatureCard(
+                      icon: Icons.description,
+                      title: 'Forms',
+                      description: 'Monitor forms',
+                      color: const Color(0xFFf093fb),
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 16),
+              
+              Row(
+                children: [
+                  Expanded(
+                    child: _FeatureCard(
+                      icon: Icons.lock,
+                      title: 'Passwords',
+                      description: 'Save securely',
+                      color: const Color(0xFFfa709a),
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _FeatureCard(
+                      icon: Icons.analytics,
+                      title: 'Analytics',
+                      description: 'View insights',
+                      color: const Color(0xFF00f2fe),
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Info Section
+              GlassContainer(
+                padding: const EdgeInsets.all(20),
+                blur: 15,
+                opacity: isDark ? 0.15 : 0.3,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Privacy First',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'All your browsing data is stored locally on your device. We track:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                        height: 1.5,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _InfoItem('Websites you visit', isDark),
+                    _InfoItem('Forms you fill out', isDark),
+                    _InfoItem('Passwords you enter', isDark),
+                    _InfoItem('Time spent on each site', isDark),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Your data never leaves your device and is encrypted.',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark ? Colors.white60 : Colors.black45,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color color;
+  final bool isDark;
+
+  const _FeatureCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark 
+            ? Colors.white.withOpacity(0.05)
+            : Colors.white.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 28),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: TextStyle(
+              fontSize: 12,
+              color: isDark ? Colors.white60 : Colors.black54,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final String text;
+  final bool isDark;
+
+  const _InfoItem(this.text, this.isDark);
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF667eea), Color(0xFF764ba2)],
+              ),
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

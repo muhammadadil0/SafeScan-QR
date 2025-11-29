@@ -10,7 +10,7 @@ class SecurityService {
   // - For Android Emulator: use '10.0.2.2'
   // - For Real Phone: use your PC's IP (e.g., '192.168.1.5')
   // - For iOS Simulator: use 'localhost' or '127.0.0.1'
-  static const String AI_API_URL = "http://10.0.2.2:5001/scan";
+  static const String AI_API_URL = "http://192.168.1.116:5001/scan";
   
   // URL Shortener domains
   static const List<String> urlShorteners = [

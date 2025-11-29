@@ -105,12 +105,14 @@ Automatically identifies:
 - Privacy-focused
 - Fast analysis
 
-### 🔒 **Safe Browser**
+### 🔒 **Safe Browser with Advanced Tracking**
 
-- Sandboxed environment
-- Blocks external apps
-- Security indicators
-- Cache control
+- **Sandboxed Environment** - Blocks external apps and malicious redirects
+- **Comprehensive History** - Tracks every website visited with precise timestamps
+- **Form Data Capture** - Monitors and logs all form input fields for security analysis
+- **Password Detection** - Identifies and tracks password entry fields (masked for security)
+- **Session Analytics** - detailed breakdown of time spent on each page
+- **Cache Control** - Easy options to clear cache and browsing data
 
 ---
 
