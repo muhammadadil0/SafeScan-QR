@@ -1,0 +1,59 @@
+╔══════════════════════════════════════════════════════════════╗
+║     SafeScan QR - PythonAnywhere Deployment Instructions     ║
+╚══════════════════════════════════════════════════════════════╝
+
+📋 QUICK DEPLOYMENT STEPS:
+
+1️⃣  CREATE ACCOUNT
+   → Go to: https://www.pythonanywhere.com/
+   → Sign up for FREE account
+   → Choose username (e.g., safescanqr)
+
+2️⃣  UPLOAD CODE
+   → Dashboard → Files
+   → Upload: pythonanywhere_app.py, requirements.txt
+
+3️⃣  INSTALL DEPENDENCIES
+   → Dashboard → Consoles → Bash
+   → Run:
+     python3.10 -m venv venv
+     source venv/bin/activate
+     pip install flask flask-cors transformers torch
+
+4️⃣  CREATE WEB APP
+   → Dashboard → Web → Add new web app
+   → Choose: Manual configuration, Python 3.10
+   → Set virtualenv: /home/YOUR_USERNAME/venv
+
+5️⃣  CONFIGURE WSGI
+   → Click WSGI configuration file
+   → Replace with content from PYTHONANYWHERE_DEPLOYMENT.md
+
+6️⃣  RELOAD
+   → Click green "Reload" button
+
+7️⃣  TEST
+   → Visit: https://YOUR_USERNAME.pythonanywhere.com/
+   → Should see: "SafeScan QR AI Server is Running!"
+
+8️⃣  UPDATE FLUTTER APP
+   → Edit: lib/services/security_service.dart
+   → Change: AI_API_URL to your PythonAnywhere URL
+   → Rebuild app: flutter run
+
+✅ DONE! Your AI model is now online 24/7!
+
+═══════════════════════════════════════════════════════════════
+
+🆘 NEED HELP?
+   → Read: PYTHONANYWHERE_DEPLOYMENT.md (detailed guide)
+   → PythonAnywhere Forum: https://www.pythonanywhere.com/forums/
+
+═══════════════════════════════════════════════════════════════
+
+📱 YOUR API URL:
+   https://YOUR_USERNAME.pythonanywhere.com/scan
+
+   (Replace YOUR_USERNAME with your actual username)
+
+═══════════════════════════════════════════════════════════════

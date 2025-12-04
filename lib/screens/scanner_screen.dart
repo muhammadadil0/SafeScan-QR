@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import '../services/security_service.dart';
+import '../services/history_service.dart';
 import 'result_screen.dart';
 
 class ScannerScreen extends StatefulWidget {
@@ -50,6 +51,10 @@ class _ScannerScreenState extends State<ScannerScreen> with SingleTickerProvider
       // Haptic feedback could be added here
       
       final result = await _securityService.analyzeUrl(code);
+      
+      // Save to history
+      final historyService = HistoryService();
+      await historyService.saveScan(result);
 
       if (mounted) {
         Navigator.pushReplacement(

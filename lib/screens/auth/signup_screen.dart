@@ -205,7 +205,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
                 child: Column(
                   children: [
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
                     
                     // Back button
                     Align(
@@ -219,7 +219,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                       ),
                     ),
                     
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 10),
                     
                     // Animated logo/icon
                     SlideTransition(
@@ -231,34 +231,34 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                         curve: Curves.elasticOut,
                       )),
                       child: Container(
-                        padding: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withOpacity(0.1),
-                              blurRadius: 30,
-                              spreadRadius: 5,
+                              blurRadius: 20,
+                              spreadRadius: 3,
                             ),
                           ],
                         ),
                         child: Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: const EdgeInsets.all(12),
                           decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
                             Icons.person_add_rounded,
-                            size: 60,
+                            size: 40,
                             color: Color(0xFF4facfe),
                           ),
                         ),
                       ),
                     ),
                     
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 15),
                     
                     // Welcome text
                     FadeTransition(
@@ -268,17 +268,17 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           Text(
                             'Create Account',
                             style: TextStyle(
-                              fontSize: 36,
+                              fontSize: 28,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               letterSpacing: -1,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          SizedBox(height: 4),
                           Text(
                             'Sign up to get started',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 14,
                               color: Colors.white70,
                             ),
                           ),
@@ -286,7 +286,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                       ),
                     ),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
                     
                     // Glassmorphic card
                     SlideTransition(
@@ -303,10 +303,10 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           curve: const Interval(0.3, 1.0),
                         ),
                         child: Container(
-                          padding: const EdgeInsets.all(30),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(30),
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: Colors.white.withOpacity(0.3),
                               width: 1.5,
@@ -314,8 +314,8 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withOpacity(0.1),
-                                blurRadius: 30,
-                                spreadRadius: 5,
+                                blurRadius: 20,
+                                spreadRadius: 3,
                               ),
                             ],
                           ),
@@ -330,7 +330,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 icon: Icons.person_outline,
                               ),
                               
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 12),
                               
                               // Email field
                               _GlassTextField(
@@ -342,7 +342,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 keyboardType: TextInputType.emailAddress,
                               ),
                               
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 12),
                               
                               // Password field
                               _GlassTextField(
@@ -363,7 +363,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 ),
                               ),
                               
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 12),
                               
                               // Confirm Password field
                               _GlassTextField(
@@ -384,7 +384,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                                 ),
                               ),
                               
-                              const SizedBox(height: 30),
+                              const SizedBox(height: 20),
                               
                               // Signup button
                               _AnimatedButton(
@@ -398,7 +398,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                       ),
                     ),
                     
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 15),
                     
                     // Login link
                     FadeTransition(
@@ -411,7 +411,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                         children: [
                           const Text(
                             "Already have an account?",
-                            style: TextStyle(color: Colors.white70),
+                            style: TextStyle(color: Colors.white70, fontSize: 14),
                           ),
                           TextButton(
                             onPressed: () => Navigator.pop(context),
@@ -420,7 +420,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 14,
                               ),
                             ),
                           ),
@@ -428,7 +428,7 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                       ),
                     ),
                     
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
@@ -485,11 +485,11 @@ class _GlassTextField extends StatelessWidget {
         style: const TextStyle(color: Colors.white, fontSize: 16),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-          prefixIcon: Icon(icon, color: Colors.white70),
+          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14),
+          prefixIcon: Icon(icon, color: Colors.white70, size: 20),
           suffixIcon: suffixIcon,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
       ),
     );

@@ -10,7 +10,7 @@ class SecurityService {
   // - For Android Emulator: use '10.0.2.2'
   // - For Real Phone: use your PC's IP (e.g., '192.168.1.5')
   // - For iOS Simulator: use 'localhost' or '127.0.0.1'
-  static const String AI_API_URL = "http://192.168.1.116:5001/scan";
+  static const String AI_API_URL = "http://10.0.2.2:5001/scan";
   
   // URL Shortener domains
   static const List<String> urlShorteners = [
@@ -80,7 +80,7 @@ class SecurityService {
 
     // 4. URL Shortener Detection
     if (_isUrlShortener(uri.host)) {
-      risks.add('⚠️ Shortened URL detected - Attackers often hide malicious links');
+      risks.add('⚠️ Shortened URL');
       riskScore += 25;
       status = _escalateStatus(status, SecurityStatus.suspicious);
       metadata['isShortened'] = true;
@@ -90,7 +90,7 @@ class SecurityService {
     String path = uri.path.toLowerCase();
     for (var ext in executableExtensions) {
       if (path.endsWith(ext)) {
-        risks.add('🚨 Downloadable app file detected ($ext) - High Risk!');
+        risks.add('🚨 Executable file ($ext)');
         riskScore += 40;
         status = SecurityStatus.dangerous;
         metadata['hasExecutable'] = true;
@@ -115,44 +115,48 @@ class SecurityService {
 
     // 7. IP Address Check
     if (_isIpAddress(uri.host)) {
-      risks.add('🔴 Raw IP address instead of domain name');
+      risks.add('🔴 IP address used');
       riskScore += 30;
       status = _escalateStatus(status, SecurityStatus.dangerous);
     }
 
     // 8. High Entropy Check
     if (_hasHighEntropy(uri.host)) {
-      risks.add('⚠️ Random/generated domain name detected');
+      risks.add('⚠️ Random domain name');
       riskScore += 15;
       status = _escalateStatus(status, SecurityStatus.suspicious);
     }
 
     // 9. HTTPS Check
     if (uri.scheme == 'http') {
-      risks.add('🔓 Not using HTTPS (Insecure connection)');
+      risks.add('🔓 No HTTPS');
       riskScore += 20;
       status = _escalateStatus(status, SecurityStatus.suspicious);
     }
 
     // 10. Phishing Keywords Check
     String lowerUrl = url.toLowerCase();
+    List<String> foundKeywords = [];
     for (var keyword in SecurityConstants.phishingKeywords) {
       if (uri.host.toLowerCase().contains(keyword)) {
-        risks.add('🎣 Phishing keyword in domain: "$keyword"');
+        foundKeywords.add(keyword);
         riskScore += 25;
         status = _escalateStatus(status, SecurityStatus.suspicious);
       } else if (lowerUrl.contains(keyword)) {
-        risks.add('⚠️ Sensitive keyword in URL: "$keyword"');
+        foundKeywords.add(keyword);
         riskScore += 10;
         status = _escalateStatus(status, SecurityStatus.suspicious);
       }
+    }
+    if (foundKeywords.isNotEmpty) {
+      risks.add('🎣 Phishing: ${foundKeywords.join(", ")}');
     }
 
     // 11. Suspicious Domains Check
     String domain = uri.host.toLowerCase();
     for (var suspicious in SecurityConstants.suspiciousDomains) {
       if (domain.contains(suspicious) || domain.endsWith('.$suspicious')) {
-        risks.add('⚠️ Suspicious hosting/domain: "$suspicious"');
+        risks.add('⚠️ Suspicious: "$suspicious"');
         riskScore += 15;
         status = _escalateStatus(status, SecurityStatus.suspicious);
       }
@@ -160,21 +164,21 @@ class SecurityService {
 
     // 12. Typosquatting Detection
     if (_detectTyposquatting(domain)) {
-      risks.add('🚨 Potential typosquatting detected');
+      risks.add('🚨 Typosquatting');
       riskScore += 35;
       status = SecurityStatus.dangerous;
     }
 
     // 13. Long Domain Check
     if (domain.length > 50) {
-      risks.add('⚠️ Extremely long domain (${domain.length} chars)');
+      risks.add('⚠️ Long domain (${domain.length} chars)');
       riskScore += 10;
       status = _escalateStatus(status, SecurityStatus.suspicious);
     }
 
     // 14. Non-standard Port Check
     if (uri.hasPort && uri.port != 80 && uri.port != 443) {
-      risks.add('⚠️ Non-standard port: ${uri.port}');
+      risks.add('⚠️ Port: ${uri.port}');
       riskScore += 15;
       status = _escalateStatus(status, SecurityStatus.suspicious);
     }
@@ -182,7 +186,7 @@ class SecurityService {
     // 15. Subdomain Count (too many subdomains is suspicious)
     int subdomainCount = domain.split('.').length - 2;
     if (subdomainCount > 3) {
-      risks.add('⚠️ Excessive subdomains ($subdomainCount levels)');
+      risks.add('⚠️ Too many subdomains ($subdomainCount)');
       riskScore += 10;
       status = _escalateStatus(status, SecurityStatus.suspicious);
     }
@@ -192,7 +196,7 @@ class SecurityService {
       final response = await http.head(uri).timeout(const Duration(seconds: 4));
       
       if (response.isRedirect || response.statusCode >= 300 && response.statusCode < 400) {
-        risks.add('🔄 URL redirects to another location');
+        risks.add('🔄 Redirects');
         if (response.headers['location'] != null) {
           finalUrl = response.headers['location']!;
           metadata['redirectsTo'] = finalUrl;
@@ -206,7 +210,8 @@ class SecurityService {
     }
 
 
-    // 17. AI Model Prediction (Hugging Face Transformers)
+    // 17. AI Model Prediction (Hugging Face Transformers) - Check first
+    String? aiResult;
     try {
       final aiPrediction = await _callAIModel(url);
       if (aiPrediction != null) {
@@ -229,19 +234,24 @@ class SecurityService {
           // Force dangerous status if confidence is high
           if (confidence >= 70.0) {
             status = SecurityStatus.dangerous;
-            risks.add('🤖 AI detected: Malicious URL (${confidence.toStringAsFixed(1)}% confidence)');
+            aiResult = '🤖 AI: Malicious (${confidence.toStringAsFixed(0)}%)';
           } else {
             status = _escalateStatus(status, SecurityStatus.suspicious);
-            risks.add('🤖 AI detected: Potentially malicious (${confidence.toStringAsFixed(1)}% confidence)');
+            aiResult = '🤖 AI: Suspicious (${confidence.toStringAsFixed(0)}%)';
           }
         } else if (isSafe && confidence >= 80.0) {
-          risks.add('🤖 AI verified: Appears safe (${confidence.toStringAsFixed(1)}% confidence)');
+          aiResult = '🤖 AI: Safe (${confidence.toStringAsFixed(0)}%)';
         }
       }
     } catch (e) {
       // AI prediction failed - continue with rule-based only
       metadata['aiError'] = 'AI model not available: ${e.toString()}';
       print('AI Model Error: $e');
+    }
+    
+    // Insert AI result at the beginning if available
+    if (aiResult != null) {
+      risks.insert(0, aiResult);
     }
 
 

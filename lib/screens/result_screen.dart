@@ -323,46 +323,7 @@ class ResultScreen extends StatelessWidget {
                         const SizedBox(height: 24),
                       ],
 
-                      // Metadata Info
-                      if (result.metadata.isNotEmpty) ...[
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Colors.blue.shade200),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.info_outline, color: Colors.blue.shade700),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Additional Information',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.blue.shade700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (result.metadata['isShortened'] == true)
-                                _InfoRow('URL Shortener', 'Detected'),
-                              if (result.metadata['hasExecutable'] == true)
-                                _InfoRow('File Type', result.metadata['fileExtension'] ?? 'Unknown'),
-                              if (result.metadata['offlineMode'] == true)
-                                _InfoRow('Mode', 'Offline Analysis'),
-                              if (result.metadata['redirectsTo'] != null)
-                                _InfoRow('Redirects To', result.metadata['redirectsTo']),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+
 
                       // Action Buttons
                       if (result.contentType == 'url') ...[

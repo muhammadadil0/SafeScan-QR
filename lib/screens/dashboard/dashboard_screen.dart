@@ -1006,6 +1006,10 @@ class _UrlCheckerTabState extends State<UrlCheckerTab> with TickerProviderStateM
     );
 
     final result = await _securityService.analyzeUrl(_controller.text);
+    
+    // Save to history
+    final historyService = HistoryService();
+    await historyService.saveScan(result);
 
     if (mounted) {
       Navigator.pop(context);
