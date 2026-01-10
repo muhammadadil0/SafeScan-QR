@@ -337,7 +337,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 📞 Support
 
 - **Email:** adilraxiq64@gmail.com | muhammadkaifnu@gmail.com
-- **Issues:** [GitHub Issues](https://github.com/yourusername/safescan-qr/issues)
+- **Issues:** [GitHub Issues](https://github.com/muhammadadil0/safescan-qr/issues)
 - **Discussions:** [GitHub Discussions](https://github.com/yourusername/safescan-qr/discussions)
 
 ---
